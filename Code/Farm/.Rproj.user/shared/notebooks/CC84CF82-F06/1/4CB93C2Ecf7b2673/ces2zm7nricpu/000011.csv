@@ -1,0 +1,4 @@
+"0","result_Final_choice_Q6=result_Final_choice_Q6%>%"
+"0","  group_by(idstud) %>%"
+"0","  fill(SQ01F06_final_choice, .direction = ""downup"")"
+"0","result_Final_choice_Q6"

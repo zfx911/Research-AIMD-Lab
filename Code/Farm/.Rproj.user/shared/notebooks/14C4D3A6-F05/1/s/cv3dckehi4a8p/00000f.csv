@@ -1,0 +1,8 @@
+"0","result_time_complete_Q5=result_time_complete_Q5%>%"
+"0","  mutate(information_use = case_when("
+"0","    PSIVariableIdentifier == 1070 ~ ""A"","
+"0","    PSIVariableIdentifier == 1071 ~ ""B"","
+"0","    PSIVariableIdentifier == 1072 ~ ""C"","
+"0","    PSIVariableIdentifier == 1073 ~ ""D"","
+"0","    TRUE ~ information"
+"0","  ))"

@@ -1,0 +1,4 @@
+"0","result_Final_choice_Q5=result_Final_choice_Q5%>%"
+"0","  group_by(idstud) %>%"
+"0","  fill(SQ01F05_final_answer, .direction = ""downup"")"
+"0","result_Final_choice_Q5"
