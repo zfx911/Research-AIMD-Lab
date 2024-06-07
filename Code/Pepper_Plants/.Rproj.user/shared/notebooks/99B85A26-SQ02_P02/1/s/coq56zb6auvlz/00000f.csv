@@ -1,3 +1,0 @@
-"0","# Filter the data based on PSIVariableIdentifier == 8005"
-"0","filtered_data <- result_time_complete_Q2 %>% filter(PSIVariableIdentifier == 8005)%>%"
-"0","filter(IsFinalAnswer == 1)"

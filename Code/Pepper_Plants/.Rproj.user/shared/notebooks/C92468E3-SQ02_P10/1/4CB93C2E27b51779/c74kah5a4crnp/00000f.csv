@@ -1,8 +1,0 @@
-"0","# Filter data and create a list to record all the steps needed."
-"0","df_filtered <- result_str_use_Q10 %>%"
-"0","  filter(!is.na(step_str)) %>%"
-"0","  group_by(idstud) %>%"
-"0","  mutate(SQ02P10_allsteps_list = list(step_str[order(row_number())]))"
-"0",""
-"0","# Convert the list column to a new column with the desired format, and then drop the list column"
-"0","df_filtered$SQ02P10_allsteps_seq <- sapply(df_filtered$SQ02P10_allsteps_list, function(x) paste0(""("", toString(x), "")""))"

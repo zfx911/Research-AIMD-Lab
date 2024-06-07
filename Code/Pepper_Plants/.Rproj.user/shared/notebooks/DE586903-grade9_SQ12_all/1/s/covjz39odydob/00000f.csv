@@ -1,3 +1,0 @@
-"0","resultAll <- result_total_time_all %>%"
-"0","  select(idstud, idstud_ori, ImportLogID,  SQ12_Navigate_seq, SQ12_Navigate_seq_time, SQ12_Navigate_timestamp, SQ12_unit_total_time)"
-"0","# resultAll"

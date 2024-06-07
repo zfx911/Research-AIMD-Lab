@@ -1,2 +1,0 @@
-"0","result_filter_Q6=result_use_Q6 %>%filter(eventname %in% c(""Nav:GoTo"", ""Response"", ""UI:Scrollbar"", ""Btn:Calc""))"
-"0","result_filter_Q6"

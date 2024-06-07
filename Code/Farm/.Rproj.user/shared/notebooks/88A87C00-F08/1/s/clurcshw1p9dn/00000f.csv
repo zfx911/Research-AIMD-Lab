@@ -1,3 +1,0 @@
-"0","resultF08 <- result_total_time_Q8 %>%"
-"0","  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, module_path, SQ01F08_A_slider_seq, SQ01F08_A_final_pos, SQ01F08_A_slider_seq_time, SQ01F08_B_slider_seq, SQ01F08_B_final_pos, SQ01F08_B_slider_seq_time, SQ01F08_allsteps_seq, SQ01F08_allsteps_seq_time, SQ01F08_allsteps_timestamp, SQ01F08_total_time)"
-"0","# resultF08"

@@ -1,7 +1,0 @@
-"0","result_time_complete_all=result_all_use %>%"
-"0","  arrange(idstud, timeunixsec, timemilisec) %>%"
-"0","  group_by(idstud) %>%"
-"0","  mutate("
-"0","    SQ12_time =ifelse(lead(timemilisec) - timemilisec > 0, (lead(timeunixsec)-timeunixsec + (lead(timemilisec)-timemilisec)/1000),(lead(timeunixsec)-timeunixsec - 1 + (lead(timemilisec)+1000 -timemilisec)/1000))"
-"0","  )"
-"0","result_time_complete_all"

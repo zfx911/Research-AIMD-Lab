@@ -1,3 +1,0 @@
-"0","filtered_col = result_all_actions_Q7%>%"
-"0","  select(idstud, PSIVariableIdentifier, IsFinalAnswer, information, RowNumber)"
-"0","filtered_col"

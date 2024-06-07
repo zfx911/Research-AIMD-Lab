@@ -1,3 +1,0 @@
-"0","result_str_use_Q3 <- result_str_Q3 %>%"
-"0","  mutate(step_str = ifelse(eventname == ""UI:Scrollbar"", gsub("" "", ""_"", step_str), step_str))"
-"0","result_str_use_Q3[c(""RowNumber"",""step_str"",""information"")]"

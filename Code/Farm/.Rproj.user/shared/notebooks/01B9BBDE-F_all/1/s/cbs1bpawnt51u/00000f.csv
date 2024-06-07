@@ -1,6 +1,0 @@
-"0","result_time_complete_all=result_time_complete_all%>%"
-"0","  filter("
-"0","    (eventname == ""Nav:GoTo"" | eventname == ""UI:IsLoaded"") &"
-"0","    BlockName == ""SQ01"""
-"0","  )"
-"0","result_time_complete_all"

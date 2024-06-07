@@ -1,6 +1,0 @@
-"0","result_copy_use <- result_copy_all %>%"
-"0","  mutate(new_index = case_when("
-"0","    new_currentindex %in% c(1,2,3,5,7,9,10,11,12) ~ paste0(""Page"", new_currentindex+1, ""_Q"", cor_rule(new_currentindex)),"
-"0","          TRUE ~ paste0(""Page"", new_currentindex+1) "
-"0","  ))"
-"0","result_copy_use"

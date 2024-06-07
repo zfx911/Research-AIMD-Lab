@@ -1,7 +1,0 @@
-"0","result_time_complete_Q13=result_filter_Q13 %>%"
-"0","  mutate(SQ02P13_time = ifelse(currentindex == 12 & (eventname == 'Nav:GoTo' | eventname == 'UI:IsLoaded') | currentindex == 27 & (eventname == 'Nav:GoTo' | eventname == 'UI:IsLoaded'), 0, ifelse(timemilisec - lag(timemilisec) > 0,"
-"0","                                      (timeunixsec - lag(timeunixsec) + (timemilisec - lag(timemilisec))/1000),"
-"0","                                      (timeunixsec - lag(timeunixsec) - 1 + (timemilisec + 1000 - lag(timemilisec))/1000))))"
-"0","# head(result_time_complete_Q13[c(""idstud"",""module_path"",""SQ02P13_time"")])"
-"0",""
-"0","# result_time_complete_Q13"

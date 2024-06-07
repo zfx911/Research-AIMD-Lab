@@ -1,2 +1,0 @@
-"0","filtered_data <- mutate(filtered_data, SQ02P03_wordcount_no_punc = str_count(gsub(""[-[:punct:]]"", "" "", information), ""\\S+""))"
-"0","filtered_data[c(""idstud"",""information"",""module_path"",""SQ02P03_wordcount_punc"",""SQ02P03_wordcount_no_punc"")]"

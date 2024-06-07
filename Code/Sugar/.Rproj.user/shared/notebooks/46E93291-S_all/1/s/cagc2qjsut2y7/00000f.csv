@@ -1,3 +1,0 @@
-"0","resultAll <- result_total_time_all %>%"
-"0","  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, SQ02_Navigate_seq, SQ02_Navigate_seq_time, SQ02_Navigate_timestamp, SQ02_unit_total_time)"
-"0","# resultAll"

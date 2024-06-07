@@ -1,5 +1,0 @@
-"0","```r
-resultF03 <- result_total_time_Q3 %>%
-  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, module_path, SQ01F03_answer_sequence, SQ01F03_final_answer,SQ01F03_Ruler, SQ01F03_allsteps_seq, SQ01F03_allsteps_seq_time, SQ01F03_allsteps_timestamp, SQ01F03_total_time)
-# resultF03
-```"

@@ -1,6 +1,0 @@
-"0","```r
-result_Final_choice_Q3=result_Final_choice_Q3%>%
-  group_by(idstud) %>%
-  fill(SQ01F03_final_answer, .direction = \"downup\")
-result_Final_choice_Q3
-```"

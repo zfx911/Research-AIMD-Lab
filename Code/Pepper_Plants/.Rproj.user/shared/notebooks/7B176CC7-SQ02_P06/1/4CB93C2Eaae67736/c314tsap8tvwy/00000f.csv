@@ -1,3 +1,0 @@
-"0","resultP06 <- result_total_time_Q6 %>%"
-"0","  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, module_path, SQ02P06_answer_sequence, SQ02P06_final_answer, SQ02P06_allsteps_seq, SQ02P06_allsteps_seq_time, SQ02P06_allsteps_timestamp, SQ02P06_total_time)"
-"0","# resultP06"

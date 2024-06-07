@@ -1,6 +1,0 @@
-"0","result_all_use = result_all%>%"
-"0","  filter(row_number() == 1 | "
-"0","         currentindex != lag(currentindex) | "
-"0","         idstud != lag(idstud) | "
-"0","         eventname == ""Nav:GoTo"")"
-"0","result_all_use"

@@ -1,3 +1,0 @@
-"0","resultP05 <- result_total_time_Q5 %>%"
-"0","  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, module_path, SQ02P05_wordcount_punc_TA, SQ02P05_wordcount_no_punc_TA, SQ02P05_raw_response_TA, SQ02P05_wordcount_punc_TB, SQ02P05_wordcount_no_punc_TB, SQ02P05_raw_response_TB, SQ02P05_allsteps_seq, SQ02P05_allsteps_seq_time, SQ02P05_allsteps_timestamp, SQ02P05_total_time)"
-"0","# resultP05"

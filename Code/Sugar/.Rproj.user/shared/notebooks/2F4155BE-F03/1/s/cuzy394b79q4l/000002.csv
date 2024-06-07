@@ -1,6 +1,0 @@
-"0","```r
-df_filtered_merge = df_filtered[c(\"idstud\",\"SQ01F03_Ruler\")]
-
-df_filtered_merge=distinct(df_filtered_merge)
-df_filtered_merge
-```"

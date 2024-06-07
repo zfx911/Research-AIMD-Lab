@@ -1,5 +1,0 @@
-"0","```r
-result_use_Q3= transform(result3,
-                       module_path = paste0(\"(\", BlockName, \", \", BookletPart, \", \", BlockInPart, \")\"))
-head(result_use_Q3)
-```"

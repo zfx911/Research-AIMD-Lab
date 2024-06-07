@@ -1,4 +1,0 @@
-"0","result_choice_seq_Q6=result_choice_seq_Q6%>%"
-"0","  group_by(idstud) %>%"
-"0","  fill(SQ01F06_choice_sequence, .direction = ""downup"")"
-"0","result_choice_seq_Q6"

@@ -1,3 +1,0 @@
-"0","df_temp2=df_temp%>%"
-"0","  mutate(cond_res = ifelse(eventname == ""Nav:GoTo"" | eventname == ""UI:Scrollbar"", 6, cond_res))"
-"0","df_temp2"

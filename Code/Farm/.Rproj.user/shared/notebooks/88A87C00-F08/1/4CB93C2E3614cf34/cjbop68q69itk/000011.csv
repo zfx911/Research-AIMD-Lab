@@ -1,3 +1,0 @@
-"0","write_sav(resultF08_save, ""../../../new_data/grade5/Farm/SQ01F08_PSI.sav"")"
-"0",""
-"0","# write.csv(resultF08_save, file = 'csv_SQ01F08_PSI.csv', row.names = FALSE)"

@@ -1,2 +1,0 @@
-"0","filtered_data <- result_time_complete_Q3 %>% filter(PSIVariableIdentifier == 8008)%>%"
-"0","filter(IsFinalAnswer == 1)"

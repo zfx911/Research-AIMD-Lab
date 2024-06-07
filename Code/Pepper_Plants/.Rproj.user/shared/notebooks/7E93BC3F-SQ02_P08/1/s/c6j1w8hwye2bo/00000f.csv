@@ -1,7 +1,0 @@
-"0","# Group by idstud and calculate the sum of SQ02P08_time"
-"0","result <- result_time_complete_Q8 %>%"
-"0","  group_by(idstud) %>%"
-"0","  summarise(SQ02P08_total_time = sum(SQ02P08_time, na.rm = TRUE))"
-"0",""
-"0","# Merge the result back to the original data frame"
-"0","result_total_time_Q8 <- merge(result_all_unit_time_Q8, result, by = ""idstud"", all.x = TRUE)"

@@ -1,3 +1,0 @@
-"0","resultP13 <- result_total_time_Q13 %>%"
-"0","  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, module_path, SQ02P13_choice_sequence, SQ02P13_final_choice,  SQ02P13_allsteps_seq, SQ02P13_allsteps_seq_time, SQ02P13_allsteps_timestamp, SQ02P13_total_time)"
-"0","# resultP13"
