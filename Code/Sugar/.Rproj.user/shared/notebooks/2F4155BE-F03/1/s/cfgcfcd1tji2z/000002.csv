@@ -1,0 +1,9 @@
+"0","```r
+result_time_complete_Q3=result_filter_Q3 %>%
+  mutate(SQ01F03_time = ifelse(currentindex == 15 & eventname == 'Nav:GoTo' | currentindex == 3 & eventname == 'Nav:GoTo', 0, ifelse(timemilisec - lag(timemilisec) > 0,
+                                      (timeunixsec - lag(timeunixsec) + (timemilisec - lag(timemilisec))/1000),
+                                      (timeunixsec - lag(timeunixsec) - 1 + (timemilisec + 1000 - lag(timemilisec))/1000))))
+# head(result_time_complete_Q3[c(\"idstud\",\"module_path\",\"SQ01F03_time\")])
+
+# result_time_complete_Q3
+```"

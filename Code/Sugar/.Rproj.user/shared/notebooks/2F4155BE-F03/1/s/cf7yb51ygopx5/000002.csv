@@ -1,0 +1,11 @@
+"0","```r
+# Group by idstud and calculate the sum of SQ01F03_time
+result <- result_time_complete_Q3 %>%
+  group_by(idstud) %>%
+  summarise(SQ01F03_total_time = sum(SQ01F03_time, na.rm = TRUE))
+
+# Merge the result back to the original data frame
+result_total_time_Q3 <- merge(result_all_unit_time_Q3, result, by = \"idstud\", all.x = TRUE)
+
+result_total_time_Q3
+```"

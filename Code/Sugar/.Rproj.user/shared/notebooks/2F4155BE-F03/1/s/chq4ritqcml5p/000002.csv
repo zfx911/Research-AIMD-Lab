@@ -1,0 +1,21 @@
+"0","```r
+condition1 <- df_filter$BlockName == 'SQ01' & 
+              df_filter$BookletPart == 1 & 
+              df_filter$BlockInPart == 2 & 
+              df_filter$currentindex == 15 
+
+# Define the second condition
+condition2 <- df_filter$BlockName == 'SQ01' & 
+              df_filter$BookletPart == 2 & 
+              df_filter$BlockInPart == 1 & 
+              df_filter$currentindex == 3 
+
+# Combine the two conditions using OR (|) as you want rows satisfying either condition
+combined_condition <- condition1 | condition2
+
+# Use filter to get the rows that satisfy the conditions and one row below
+result3 <- df_filter %>% 
+  filter(combined_condition | lag(combined_condition, default = FALSE))
+
+result3
+```"

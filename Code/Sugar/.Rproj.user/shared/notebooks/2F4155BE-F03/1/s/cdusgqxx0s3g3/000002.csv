@@ -1,0 +1,6 @@
+"0","```r
+result_answer_seq_Q3=result_answer_seq_Q3%>%
+  group_by(idstud) %>%
+  fill(SQ01F03_answer_sequence, .direction = \"downup\")
+result_answer_seq_Q3
+```"

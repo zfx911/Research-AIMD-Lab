@@ -1,0 +1,17 @@
+"0","```r
+result_pairs_Q3 <- result_time_pair_Q3 %>%
+  mutate(information = case_when(
+    PSIVariableIdentifier == 1020 & information != \"\" & eventname == \"Response\" ~ paste0(\"A_\", information),
+    PSIVariableIdentifier == 1021 & information != \"\" & eventname == \"Response\" ~ paste0(\"B_\", information),
+    PSIVariableIdentifier == 1022 & information != \"\" & eventname == \"Response\" ~ paste0(\"C_\", information),
+    PSIVariableIdentifier == 1023 & information != \"\" & eventname == \"Response\" ~ paste0(\"D_\", information),
+    
+    PSIVariableIdentifier == 1020 & information == \"\" & eventname == \"Response\" ~ \"A_rm\",
+    PSIVariableIdentifier == 1021 & information == \"\" & eventname == \"Response\" ~ \"B_rm\",
+    PSIVariableIdentifier == 1022 & information == \"\" & eventname == \"Response\" ~ \"C_rm\",
+    PSIVariableIdentifier == 1023 & information == \"\" & eventname == \"Response\" ~ \"D_rm\",
+    TRUE ~ information
+  ))
+
+result_pairs_Q3
+```"

@@ -1,0 +1,20 @@
+"0","```r
+result_str_Q3 <- result_copy_Q3 %>%
+  mutate(
+    step_str = case_when(
+      PSIVariableIdentifier %in% c(1020, 1021, 1022, 1023) & eventname == \"Response\" ~ paste0(\"Footprint\", information),
+      eventname == \"Nav:GoTo\" & new_currentindex == 3 ~ \"Navigate_to_Page04_Q3\",
+      eventname == \"Nav:GoTo\" & new_currentindex != 3 ~ {
+        case_when(
+          new_currentindex %in% c(1,2,3,5,7,9,10,11,12) ~ paste0(\"Navigate_to_Page\", new_currentindex+1, \"_Q\", cor_rule(new_currentindex)),
+          TRUE ~ paste0(\"Navigate_to_Page\", new_currentindex+1)
+        )
+      },
+      eventname == \"UI:Scrollbar\" ~ sub('.*\"event\":\"([^\"]+).*\"scrollTop\":(\\d+).*', '\\1 \\2', information),
+      eventname == \"Btn:Ruler\" ~ paste0(\"Ruler_\", gsub('.*To\":\"(\\w+).*', '\\1', information)),
+      eventname == \"KeypadPopup\" ~ \"KeypadPopup\",
+      TRUE ~ NA_character_  # If none of the conditions are met, set to NA
+    )
+  )
+result_str_Q3[c(\"RowNumber\",\"step_str\",\"information\")]
+```"
