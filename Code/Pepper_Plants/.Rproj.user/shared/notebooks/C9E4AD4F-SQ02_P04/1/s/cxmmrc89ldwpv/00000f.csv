@@ -1,0 +1,3 @@
+"0","resultP04 <- result_total_time_Q4 %>%"
+"0","  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, module_path, SQ02P04_answer_sequence, SQ02P04_final_answer, SQ02P04_allsteps_seq, SQ02P04_allsteps_seq_time, SQ02P04_allsteps_timestamp, SQ02P04_total_time)"
+"0","# resultP04"

@@ -1,0 +1,3 @@
+"0","# Merge the result back to the original data frame"
+"0","result_wordcount_Q10 <- merge(result_Final_choice_Q10, df_filtered_merge, by = ""idstud"", all.x = TRUE)"
+"0","result_wordcount_Q10"

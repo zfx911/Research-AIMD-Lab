@@ -1,0 +1,2 @@
+"0","df_filter <- df %>%"
+"0","  filter(df$PSIVariableIdentifier != 8022 |is.na(df$PSIVariableIdentifier))"

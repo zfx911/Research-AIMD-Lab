@@ -1,0 +1,3 @@
+"0","df_filter <- df %>%"
+"0","  filter(PSIVariableIdentifier != 8060 | is.na(PSIVariableIdentifier)) %>%"
+"0","  filter(eventname != ""Btn:Next"")"

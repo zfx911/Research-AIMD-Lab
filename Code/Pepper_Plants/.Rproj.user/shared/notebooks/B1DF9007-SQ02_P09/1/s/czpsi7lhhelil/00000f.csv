@@ -1,0 +1,4 @@
+"0","result_choice_seq_Q09=result_choice_seq_Q09%>%"
+"0","  group_by(idstud) %>%"
+"0","  fill(SQ02P09_choice_sequence, .direction = ""downup"")"
+"0","result_choice_seq_Q09"

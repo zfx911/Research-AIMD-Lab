@@ -1,0 +1,4 @@
+"0","result_all%>%"
+"0","  group_by(idstud) %>%"
+"0","  slice(n() - 1) %>%"
+"0","  ungroup()"

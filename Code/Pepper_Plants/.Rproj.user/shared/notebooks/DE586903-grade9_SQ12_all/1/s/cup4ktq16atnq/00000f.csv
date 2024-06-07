@@ -1,0 +1,6 @@
+"0","df_filtered <- result_copy_all %>%"
+"0","  group_by(idstud) %>%"
+"0","  mutate(SQ12_Navigate_list = list(new_currentindex[order(row_number())]))"
+"0",""
+"0","# Convert the list column to a new column with the desired format, and then drop the list column"
+"0","df_filtered$SQ12_Navigate_seq <- sapply(df_filtered$SQ12_Navigate_list, function(x) paste0(""("", toString(x), "")""))"

@@ -1,0 +1,6 @@
+"0","df_filtered <- select(df_filtered, -SQ02P08_allsteps_list)"
+"0","df_filtered_merge = df_filtered[c(""idstud"",""RowNumber"",""SQ02P08_allsteps_seq"")]"
+"0",""
+"0","result_allsteps_Q8 <- merge(result_Final_choice_Q8, df_filtered_merge, by = c(""idstud"",""RowNumber""), all = TRUE)"
+"2","Error: object 'result_Final_choice_Q8' not found
+"

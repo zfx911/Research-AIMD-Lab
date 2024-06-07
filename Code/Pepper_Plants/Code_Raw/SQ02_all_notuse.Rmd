@@ -1,0 +1,241 @@
+---
+title: "SQ02all"
+author: "zifengxu"
+date: "2024-03-23"
+output: html_document
+---
+
+# Read the Data (PSI)
+```{r}
+library(haven)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(jsonlite)
+```
+
+```{r}
+df <- read_sav("../data/grade9/BSLNORZ7_PSI.sav")
+
+# Explore the data
+head(df)
+```
+
+Filter the rows and exactly one row above the row that satisfied one of the conditions below: 
+
+Condition 1: BlockName=SQ02, BookletPart=1, BlockInPart=1, eventname == "Nav:GoTo".
+
+Condition 2: BlockName=SQ02, BookletPart=2, BlockInPart=2, (eventname == "Nav:GoTo" or eventname == "UI:IsLoaded").
+
+```{r}
+condition1 <- df$BlockName == 'SQ02' & 
+              df$BookletPart == 1 & 
+              df$BlockInPart == 1 & 
+              (df$eventname == "Nav:GoTo" |
+              df$eventname == "UI:IsLoaded" ) 
+
+condition2 <- df$BlockName == 'SQ02' & 
+              df$BookletPart == 2 & 
+              df$BlockInPart == 2 & 
+              (df$eventname == "Nav:GoTo" |
+              df$eventname == "UI:IsLoaded" )
+
+# Combine the two conditions using OR (|) as you want rows satisfying either condition
+combined_condition <- condition1 | condition2
+
+# Use filter to get the rows that satisfy the conditions and one row below
+result_all <- df %>% 
+  filter(combined_condition)
+
+result_all
+```
+
+
+### Time
+Create a new column SQ02_time based on the following rule:
+Group by the column idstud, for each id, the new column SQ02_time = ifelse(timemilisec - lag(timemilisec) > 0,
+                                      (timeunixsec - lag(timeunixsec) + (timemilisec - lag(timemilisec))/1000),
+                                      (timeunixsec - lag(timeunixsec) - 1 + (timemilisec + 1000 - lag(timemilisec))/1000))
+```{r}
+result_time_complete_all=result_all %>%
+  arrange(idstud, timeunixsec, timemilisec) %>%
+  group_by(idstud) %>%
+  mutate(
+    SQ02_time = ifelse(row_number() == 1, 0,
+                       ifelse(timemilisec - lag(timemilisec) > 0,
+                              (timeunixsec - lag(timeunixsec) + (timemilisec - lag(timemilisec))/1000),
+                              (timeunixsec - lag(timeunixsec) - 1 + (timemilisec + 1000 - lag(timemilisec))/1000)))
+  )
+result_time_complete_all
+```
+                                      
+```{r}
+result_time_complete_all[, c('idstud', 'SQ02_time', 'timeunixsec', 'timemilisec')]
+```
+
+```{r}
+result_time_complete_all = result_time_complete_all%>%
+  mutate(RowNumber = row_number())
+```
+
+```{r}
+result_time_complete_all$SQ02_all_unit_time <- result_time_complete_all$timeunixsec * 1000 + result_time_complete_all$timemilisec
+
+# show all the units
+result_time_complete_all$SQ02_all_unit_time <- format(result_time_complete_all$SQ02_all_unit_time, scientific = FALSE)
+```
+
+```{r}
+result_time_complete_all[, c('idstud', 'SQ02_time','currentindex' ,'SQ02_all_unit_time', 'timeunixsec', 'timemilisec')]
+# result_time_complete_all
+```
+
+
+### All sequence
+```{r}
+result_copy_all=data.frame(result_time_complete_all)
+result_copy_all <- result_copy_all %>%
+  mutate(new_currentindex = case_when(
+    currentindex == 15 ~ 1,
+    currentindex == 16 ~ 2,
+    currentindex == 17 ~ 3,
+    currentindex == 18 ~ 4,
+    currentindex == 19 ~ 5,
+    currentindex == 20 ~ 6,
+    currentindex == 21 ~ 7,
+    currentindex == 22 ~ 8,
+    currentindex == 23 ~ 9,
+    currentindex == 24 ~ 10,
+    currentindex == 25 ~ 11,
+    currentindex == 26 ~ 12,
+    currentindex == 27 ~ 13,
+    currentindex == 28 ~ 14,
+    TRUE ~ currentindex+1  # Keep the original value if it doesn't match any rule
+  ))
+```
+
+
+```{r}
+df_filtered <- result_copy_all %>%
+  group_by(idstud) %>%
+  mutate(SQ02_Navigate_list = list(new_currentindex[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ02_Navigate_seq <- sapply(df_filtered$SQ02_Navigate_list, function(x) paste0("(", toString(x), ")"))
+```
+
+```{r}
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ02_Navigate_seq")]
+
+result_Navi_all <- merge(result_time_complete_all, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_Navi_all=result_Navi_all%>%
+  group_by(idstud) %>%
+  fill(SQ02_Navigate_seq, .direction = "downup")
+
+result_Navi_all
+```
+
+
+### Time Taken for All Steps
+create a column to record the time taken for each single steps for each student to do this problem.
+```{r}
+# Filter data and create a list to record all the steps needed.
+df_filtered <- result_copy_all %>%
+  group_by(idstud) %>%
+  mutate(SQ02_Navigate_list = list(SQ02_time[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ02_Navigate_seq_time <- sapply(df_filtered$SQ02_Navigate_list, function(x) paste0("(", toString(x), ")"))
+
+# filter the data and select column to merge
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ02_Navigate_seq_time")]
+
+# merge the data
+result_alls_time_all <- merge(result_Navi_all, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_alls_time_all=result_alls_time_all%>%
+  group_by(idstud) %>%
+  fill(SQ02_Navigate_seq_time, .direction = "downup")
+result_alls_time_all
+```
+
+
+### Timestamp for All Steps in milisecond
+create a column to record the time taken for each single steps for each student to do this problem.
+```{r}
+# Filter data and create a list to record all the steps needed.
+df_filtered <- result_copy_all %>%
+  group_by(idstud) %>%
+  mutate(SQ02_Navigate_list = list(SQ02_all_unit_time[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ02_Navigate_timestamp <- sapply(df_filtered$SQ02_Navigate_list, function(x) paste0("(", toString(x), ")"))
+
+# filter the data and select column to merge
+df_filtered <- select(df_filtered, -SQ02_Navigate_list)
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ02_Navigate_timestamp")]
+
+# merge the data
+result_all_unit_time_all <- merge(result_alls_time_all, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_all_unit_time_all=result_all_unit_time_all%>%
+  group_by(idstud) %>%
+  fill(SQ02_Navigate_timestamp, .direction = "downup")
+result_all_unit_time_all
+```
+
+### Total time taken
+Create a new column SQ02_unit_total_time. Group by idstud, SQ02_unit_total_time = sum the value of the column SQ02_time for each idstud.
+
+```{r}
+# Group by idstud and calculate the sum of SQ02_time
+result <- result_copy_all %>%
+  group_by(idstud) %>%
+  summarise(SQ02_unit_total_time = sum(SQ02_time, na.rm = TRUE))
+
+# Merge the result back to the original data frame
+result_total_time_all <- merge(result_all_unit_time_all, result, by = "idstud", all.x = TRUE)
+```
+
+```{r}
+result_total_time_all
+# result_total_time_all[c("idstud","SQ02_time","SQ02_unit_total_time")]
+```
+
+
+### Save the data
+Filter the columns of data frame, only keep the new created columns and idstud, idstud_ori, ImportLogID, BlockName, BookletPart, BlockInPart.
+```{r}
+resultAll <- result_total_time_all %>%
+  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, SQ02_Navigate_seq, SQ02_Navigate_seq_time, SQ02_Navigate_timestamp, SQ02_unit_total_time)
+# resultAll
+```
+
+
+```{r}
+resultAll_save = resultAll[!duplicated(resultAll), ]
+
+condition1 <- resultAll_save$BlockName == 'SQ02' & 
+              resultAll_save$BookletPart == 1 & 
+              resultAll_save$BlockInPart == 1 
+
+condition2 <- resultAll_save$BlockName == 'SQ02' & 
+              resultAll_save$BookletPart == 2 & 
+              resultAll_save$BlockInPart == 2
+
+combined_condition <- condition1 | condition2
+
+resultAll_save=resultAll_save%>%ungroup()%>% 
+  filter(combined_condition)
+resultAll_save
+```
+
+Save the dataframe
+```{r}
+# write_sav(resultAll_save, "../new_data/grade9/SQ02all_PSI.sav")
+
+# write.csv(resultAll_save, file = 'csv_SQ12all_PSI.csv', row.names = FALSE)
+```
+
+
