@@ -1,0 +1,17 @@
+"0","```r
+resultF03_save = resultF03[!duplicated(resultF03), ]
+
+condition1 <- resultF03_save$BlockName == 'SQ01' & 
+              resultF03_save$BookletPart == 1 & 
+              resultF03_save$BlockInPart == 2 
+
+condition2 <- resultF03_save$BlockName == 'SQ01' & 
+              resultF03_save$BookletPart == 2 & 
+              resultF03_save$BlockInPart == 1
+
+combined_condition <- condition1 | condition2
+
+resultF03_save=resultF03_save%>%ungroup()%>% 
+  filter(combined_condition)
+resultF03_save
+```"

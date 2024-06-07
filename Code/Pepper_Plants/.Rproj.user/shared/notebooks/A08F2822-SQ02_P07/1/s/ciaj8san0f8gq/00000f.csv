@@ -1,0 +1,8 @@
+"0","df_filtered_merge = df_filtered[c(""idstud"",""RowNumber"",""SQ02P07_allsteps_seq"")]"
+"0",""
+"0","result_allsteps_Q7 <- merge(result_Final_choice_Q7, df_filtered_merge, by = c(""idstud"",""RowNumber""), all = TRUE)"
+"0",""
+"0","result_allsteps_Q7=result_allsteps_Q7%>%"
+"0","  group_by(idstud) %>%"
+"0","  fill(SQ02P07_allsteps_seq, .direction = ""downup"")"
+"0","# result_allsteps_Q7"

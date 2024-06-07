@@ -1,0 +1,363 @@
+---
+title: "S01"
+author: "zifengxu"
+date: "2024-01-28"
+output: html_document
+---
+
+# Read the Data (PSI)
+```{r}
+library(haven)
+library(dplyr)
+library(stringr)
+library(tidyr)
+```
+
+```{r}
+df <- read_sav("../data/grade9/BSLNORZ7_PSI.sav")
+
+# Explore the data
+head(df)
+```
+
+
+Remove the rows of auto check for this question
+```{r}
+df_filter = df%>%
+  filter(df$PSIVariableIdentifier != 5002 |is.na(df$PSIVariableIdentifier))
+```
+
+First of all, filter the rows and exactly one row above the row that satisfied one of the conditions below: 
+
+Condition 1: BlockName=SQ01, BookletPart=1, BlockInPart=2, currentindex=15.
+
+Condition 2: BlockName=SQ01, BookletPart=2, BlockInPart=1, currentindex=1.
+```{r}
+condition1 <- df_filter$BlockName == 'SQ01' & 
+              df_filter$BookletPart == 1 & 
+              df_filter$BlockInPart == 2 & 
+              df_filter$currentindex == 15 
+
+# Define the second condition
+condition2 <- df_filter$BlockName == 'SQ01' & 
+              df_filter$BookletPart == 2 & 
+              df_filter$BlockInPart == 1 & 
+              df_filter$currentindex == 1 
+
+# Combine the two conditions using OR (|) as you want rows satisfying either condition
+combined_condition <- condition1 | condition2
+
+# Use filter to get the rows that satisfy the conditions and one row above
+result1 <- df_filter %>% 
+  filter(combined_condition | lag(combined_condition, default = FALSE))
+```
+
+```{r}
+result1
+```
+
+
+### Module Path
+Create a new column module_path based on (BlockName, BookletPart, BlockInPart, currentindex)
+```{r}
+result_use_Q1= transform(result1,
+                       module_path = paste0("(", BlockName, ", ", BookletPart, ", ", BlockInPart, ")"))
+result_use_Q1
+```
+
+
+### Time Taken
+Filter the data that only related to students actions.
+```{r}
+result_filter_Q1=result_use_Q1 %>%filter(eventname %in% c("Nav:GoTo", "Response", "UI:Scrollbar", "Btn:Calc"))
+result_filter_Q1
+```
+
+Create a new column SQ01S01_time based on two columns timeunixsec and timemilisec. The new column SQ01S01_time is created based on the rule below:
+
+If currentindex == 15 & eventname == 'Nav:GoTo' or currentindex == 1 & eventname == 'Nav:GoTo', then return 0, otherwise, 
+
+Let result_temp1 = the value of the row of the column timemilisec that satisfied the condition - the value of the previous row. 
+
+If the result_temp1 is greater than 0, then result_temp2 = the value of the row of the column timeunixsec that satisfied the condition - the value of the previous row. Finally, the value of the row of the new created column SQ01S01_time = result_temp2+result_temp1/1000
+
+If the result_temp1 is less than 0, then result_temp1 = 1000 + the value of the row of the column timemilisec that satisfied the condition. result_temp2 = the value of the row of the column timeunixsec that satisfied the condition - 1 - the value of the previous row. Finally, the value of the row of the new created column SQ01S01_time = result_temp2+result_temp1/1000
+```{r}
+result_time_complete_Q1=result_filter_Q1 %>%
+  mutate(SQ01S01_time = ifelse(currentindex == 15 & eventname == 'Nav:GoTo' | currentindex == 1 & eventname == 'Nav:GoTo', 0, ifelse(timemilisec - lag(timemilisec) > 0,
+                                      (timeunixsec - lag(timeunixsec) + (timemilisec - lag(timemilisec))/1000),
+                                      (timeunixsec - lag(timeunixsec) - 1 + (timemilisec + 1000 - lag(timemilisec))/1000))))
+# head(result_time_complete_Q1[c("idstud","module_path","SQ01S01_time")])
+
+# result_time_complete_Q1
+```
+
+```{r}
+result_time_complete_Q1 = result_time_complete_Q1%>%
+  mutate(RowNumber = row_number())
+```
+
+```{r}
+result_time_complete_Q1 
+```
+
+
+### Time in milisec
+Create a new column SQ01S01_unit_time by merging the column timeunixsec and timemilisec together by following rule:
+the new column SQ01S01_unit_time = timeunixsec * 1000 + timemilisec
+```{r}
+result_time_complete_Q1$SQ01S01_unit_time <- result_time_complete_Q1$timeunixsec * 1000 + result_time_complete_Q1$timemilisec
+
+# show all the units
+result_time_complete_Q1$SQ01S01_unit_time <- format(result_time_complete_Q1$SQ01S01_unit_time, scientific = FALSE)
+result_time_complete_Q1
+```
+
+
+### Word Count 
+Filter the data based on PSIVariableIdentifier == 5000 and IsFinalAnswer == 1.
+```{r}
+filtered_data <- result_time_complete_Q1 %>% filter(PSIVariableIdentifier == 5000)%>%
+filter(IsFinalAnswer == 1)
+```
+
+```{r}
+length(unique(filtered_data$idstud))
+```
+
+Create a new column SQ01S01_wordcount_punc that count the number of words in the column information including the punctuations.
+```{r}
+# Function to split words and punctuations
+split_words_and_punctuations <- function(text) {
+  # Match words and punctuations separately
+  tokens <- strsplit(text, "(?<=[a-zA-Z0-9])(?=[[:punct:]])|(?<=[[:punct:]])(?=[a-zA-Z0-9])|\\s+", perl=TRUE)[[1]]
+  # Remove empty tokens
+  tokens <- tokens[tokens != ""]
+  return(tokens)
+}
+
+# Apply the function to the information column
+filtered_data$SQ01S01_wordcount_punc <- sapply(filtered_data$information, function(x) length(split_words_and_punctuations(x)))
+```
+Use (?<=[a-zA-Z0-9])(?=[[:punct:]])|(?<=[[:punct:]])(?=[a-zA-Z0-9]) split words and punctuations separately, and use |\\s+ matches one or more whitespace characters. Then count the total number of tokens.
+
+excluding the punctuations
+```{r}
+filtered_data <- mutate(filtered_data, SQ01S01_wordcount_no_punc = str_count(gsub("[-[:punct:]]", " ", information), "\\S+"))
+filtered_data[c("idstud","information","module_path","SQ01S01_wordcount_punc","SQ01S01_wordcount_no_punc")]
+```
+
+Merge the data to the original data
+```{r}
+# df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S01_wordcount_punc","SQ01S01_wordcount_no_punc")]
+df_filtered_merge = filtered_data[c("idstud","SQ01S01_wordcount_punc","SQ01S01_wordcount_no_punc")]
+```
+
+```{r}
+# Merge the result back to the original data frame
+result_wordcount_Q1 <- merge(result_time_complete_Q1, df_filtered_merge, by = "idstud", all.x = TRUE)
+result_wordcount_Q1
+```
+
+
+### Raw Response
+Create a new column SQ01S01_raw_response that is exactly same as the column information of the filtered data.
+```{r}
+filtered_data$SQ01S01_raw_response <- filtered_data$information
+
+df_filtered_merge = filtered_data[c("idstud","SQ01S01_raw_response")]
+```
+
+```{r}
+# Merge the result back to the original data frame
+result_wordres_Q1 <- merge(result_wordcount_Q1, df_filtered_merge, by = "idstud", all.x = TRUE)
+result_wordres_Q1
+```
+
+
+### All Steps
+Create a new dataframe by copy the original one.Create a new column step_str based on the other column.
+If PSIVariableIdentifier == 5000, then step_str == "write_answer"
+If eventname == "Nav:GoTo" & new_currentindex == 1, then step_str == "Begin_Q1"
+If eventname == "Nav:GoTo" & new_currentindex != 1, then step_str == "Nevigate_to_Q"+ value of the column new_currentindex
+If eventname == "UI:Scrollbar", step_str == extract the value after event and scrollTop in the column information.
+If eventname == "Btn:Calc", step_str == "Calculator" + extract the value after To in the column information.
+
+Create a column new_currentindex by changing the column currentindex based on the rule below:
+15 to 1, 16 to 2, 17 to 3, 18 to 4, 19 to 5, 20 to 6, 21 to 7, 22 to 8, 23 to 9, 24 to 10, 25 to 11, 26 to 12, 27 to 13, 28 to 14
+```{r}
+result_copy_Q1=data.frame(result_time_complete_Q1)
+result_copy_Q1 <- result_copy_Q1 %>%
+  mutate(new_currentindex = case_when(
+    currentindex == 14 & BookletPart == 1 ~ 0,
+    currentindex == 15 ~ 1,
+    currentindex == 16 ~ 2,
+    currentindex == 17 ~ 3,
+    currentindex == 18 ~ 4,
+    currentindex == 19 ~ 5,
+    currentindex == 20 ~ 6,
+    currentindex == 21 ~ 7,
+    currentindex == 22 ~ 8,
+    currentindex == 23 ~ 9,
+    currentindex == 24 ~ 10,
+    currentindex == 25 ~ 11,
+    currentindex == 26 ~ 12,
+    currentindex == 27 ~ 13,
+    currentindex == 28 ~ 14,
+    TRUE ~ currentindex  # Keep the original value if it doesn't match any rule
+  ))
+```
+
+```{r}
+result_str_Q1<- result_copy_Q1 %>%
+  mutate(
+    step_str = case_when(
+      PSIVariableIdentifier == 5000 ~ "write_answer",
+      eventname == "Nav:GoTo" & new_currentindex == 1 ~ "Begin_Q1",
+      eventname == "Nav:GoTo" & new_currentindex != 1 ~ paste0("Navigate_to_Q", new_currentindex),
+      eventname == "UI:Scrollbar" ~ sub('.*"event":"([^"]+).*"scrollTop":(\\d+).*', '\\1 \\2', information),
+      eventname == "Btn:Calc" ~ paste0("Calculator_", gsub('.*To":"(\\w+).*', '\\1', information)),
+      TRUE ~ NA_character_  # If none of the conditions are met, set to NA
+    )
+  )
+result_str_Q1[c("RowNumber","step_str","information")]
+```
+ 
+If the row of value of the column eventname == "UI:Scrollbar", then the value of the row of the column step_str substitute the white space to _.
+```{r}
+result_str_use_Q1 <- result_str_Q1 %>%
+  mutate(step_str = ifelse(eventname == "UI:Scrollbar", gsub(" ", "_", step_str), step_str))
+result_str_use_Q1[c("RowNumber","step_str","information")]
+```
+
+```{r}
+# Filter data and create a list to record all the steps needed.
+df_filtered <- result_str_use_Q1 %>%
+  filter(!is.na(step_str)) %>%
+  group_by(idstud) %>%
+  mutate(SQ01S01_allsteps_list = list(step_str[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S01_allsteps_seq <- sapply(df_filtered$SQ01S01_allsteps_list, function(x) paste0("(", toString(x), ")"))
+```
+
+```{r}
+df_filtered <- select(df_filtered, -SQ01S01_allsteps_list)
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S01_allsteps_seq")]
+
+result_allsteps_Q1 <- merge(result_wordres_Q1, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_allsteps_Q1=result_allsteps_Q1%>%
+  group_by(idstud) %>%
+  fill(SQ01S01_allsteps_seq, .direction = "downup")
+# result_allsteps_Q1
+```
+
+```{r}
+result_allsteps_Q1[c("idstud","SQ01S01_allsteps_seq","information")]
+```
+
+
+### Time Taken for All Steps
+create a column to record the time taken for each single steps for each student to do this problem.
+```{r}
+# Filter data and create a list to record all the steps needed.
+df_filtered <- result_str_use_Q1 %>%
+  group_by(idstud) %>%
+  mutate(SQ01S01_allsteps_list = list(SQ01S01_time[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S01_allsteps_seq_time <- sapply(df_filtered$SQ01S01_allsteps_list, function(x) paste0("(", toString(x), ")"))
+
+# filter the data and select column to merge
+df_filtered <- select(df_filtered, -SQ01S01_allsteps_list)
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S01_allsteps_seq_time")]
+
+# merge the data
+result_alls_time_Q1 <- merge(result_allsteps_Q1, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_alls_time_Q1=result_alls_time_Q1%>%
+  group_by(idstud) %>%
+  fill(SQ01S01_allsteps_seq_time, .direction = "downup")
+result_alls_time_Q1
+```
+
+
+### Timestamp for All Steps in milisecond
+create a column to record the time taken for each single steps for each student to do this problem.
+```{r}
+# Filter data and create a list to record all the steps needed.
+df_filtered <- result_str_use_Q1 %>%
+  group_by(idstud) %>%
+  mutate(SQ01S01_allsteps_list = list(SQ01S01_unit_time[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S01_allsteps_timestamp <- sapply(df_filtered$SQ01S01_allsteps_list, function(x) paste0("(", toString(x), ")"))
+
+# filter the data and select column to merge
+df_filtered <- select(df_filtered, -SQ01S01_allsteps_list)
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S01_allsteps_timestamp")]
+
+# merge the data
+result_all_unit_time_Q1 <- merge(result_alls_time_Q1, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_all_unit_time_Q1=result_all_unit_time_Q1%>%
+  group_by(idstud) %>%
+  fill(SQ01S01_allsteps_timestamp, .direction = "downup")
+result_all_unit_time_Q1
+```
+
+### Total time taken
+Create a new column SQ01S01_total_time. Group by idstud, SQ01S01_total_time = sum the value of the column SQ01S01_time for each idstud.
+
+```{r}
+# Group by idstud and calculate the sum of SQ01S01_time
+result <- result_time_complete_Q1 %>%
+  group_by(idstud) %>%
+  summarise(SQ01S01_total_time = sum(SQ01S01_time, na.rm = TRUE))
+
+# Merge the result back to the original data frame
+result_total_time_Q1 <- merge(result_all_unit_time_Q1, result, by = "idstud", all.x = TRUE)
+```
+
+```{r}
+# result_total_time_Q1[c("idstud","SQ01S01_time","SQ01S01_total_time")]
+result_total_time_Q1
+```
+
+
+### Save the data
+Filter the columns of data frame, only keep the new created columns and idstud, idstud_ori, ImportLogID, BlockName, BookletPart, BlockInPart.
+```{r}
+resultS01 <- result_total_time_Q1 %>%
+  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, module_path, SQ01S01_wordcount_punc, SQ01S01_wordcount_no_punc, SQ01S01_raw_response, SQ01S01_allsteps_seq, SQ01S01_allsteps_seq_time, SQ01S01_allsteps_timestamp, SQ01S01_total_time)
+# resultS01
+```
+
+
+```{r}
+resultS01_save = resultS01[!duplicated(resultS01), ]
+
+condition1 <- resultS01_save$BlockName == 'SQ01' & 
+              resultS01_save$BookletPart == 1 & 
+              resultS01_save$BlockInPart == 2 
+
+condition2 <- resultS01_save$BlockName == 'SQ01' & 
+              resultS01_save$BookletPart == 2 & 
+              resultS01_save$BlockInPart == 1
+
+combined_condition <- condition1 | condition2
+
+resultS01_save=resultS01_save%>%ungroup()%>% 
+  filter(combined_condition)
+resultS01_save
+```
+
+Save the dataframe
+```{r}
+# write_sav(resultS01_save, "../new_data/grade9/SQ12S01_PSI.sav")
+
+# write.csv(resultS01_save, file = 'csv_SQ12S01_PSI.csv', row.names = FALSE)
+```
+
+

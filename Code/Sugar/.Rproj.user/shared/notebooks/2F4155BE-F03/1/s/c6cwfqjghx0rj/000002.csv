@@ -1,0 +1,15 @@
+"0","```r
+result_time_pair_Q3=result_filter_pairs_Q3 %>%
+  mutate(SQ01F03_time = ifelse(currentindex == 15 & eventname == 'Nav:GoTo' | currentindex == 3 & eventname == 'Nav:GoTo', 0, ifelse(timemilisec - lag(timemilisec) > 0,
+                                      (timeunixsec - lag(timeunixsec) + (timemilisec - lag(timemilisec))/1000),
+                                      (timeunixsec - lag(timeunixsec) - 1 + (timemilisec + 1000 - lag(timemilisec))/1000))))
+
+
+result_time_pair_Q3 = result_time_pair_Q3%>%
+  mutate(RowNumber = row_number())
+
+result_time_pair_Q3$SQ01F03_unit_time <- result_time_pair_Q3$timeunixsec * 1000 + result_time_pair_Q3$timemilisec
+
+# show all the units
+result_time_pair_Q3$SQ01F03_unit_time <- format(result_time_pair_Q3$SQ01F03_unit_time, scientific = FALSE)
+```"

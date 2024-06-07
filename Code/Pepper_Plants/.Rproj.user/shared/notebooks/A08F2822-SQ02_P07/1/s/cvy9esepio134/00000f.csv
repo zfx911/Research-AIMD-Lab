@@ -1,0 +1,4 @@
+"0","#df <- read_sav(""../data/grade9/BSLNORZ7_PSI.sav"")"
+"0",""
+"0","# Explore the data"
+"0","head(df)"

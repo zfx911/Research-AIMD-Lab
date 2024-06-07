@@ -1,0 +1,6 @@
+"0","```r
+result_ruler_use_Q3=result_ruler_use_Q3%>%
+  group_by(idstud) %>%
+  fill(SQ01F03_Ruler, .direction = \"downup\")
+result_ruler_use_Q3
+```"

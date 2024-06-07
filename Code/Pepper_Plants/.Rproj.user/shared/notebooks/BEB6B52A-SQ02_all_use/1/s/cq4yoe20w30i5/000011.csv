@@ -1,0 +1,3 @@
+"0","result_test=head(result_all_use, n = 10)"
+"0","result_test=result_test[, c('idstud', 'timeunixsec', 'timemilisec')]"
+"0","result_test"

@@ -1,0 +1,21 @@
+"0","```r
+result_copy_Q3=data.frame(result_ruler_use_Q3)
+result_copy_Q3 <- result_copy_Q3 %>%
+  mutate(new_currentindex = case_when(
+    currentindex == 12 & BookletPart == 1 ~ 0,
+    currentindex == 13 & BookletPart == 1 ~ 1,
+    currentindex == 14 ~ 2,
+    currentindex == 15 ~ 3,
+    currentindex == 16 ~ 4,
+    currentindex == 17 ~ 5,
+    currentindex == 18 ~ 6,
+    currentindex == 19 ~ 7,
+    currentindex == 20 ~ 8,
+    currentindex == 21 ~ 9,
+    currentindex == 22 ~ 10,
+    currentindex == 23 ~ 11,
+    currentindex == 24 ~ 12,
+    currentindex == 25 ~ 13,
+    TRUE ~ currentindex  # Keep the original value if it doesn't match any rule
+  ))
+```"

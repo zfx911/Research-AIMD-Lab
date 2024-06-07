@@ -1,0 +1,3 @@
+"0","filtered_data$SQ02P09_raw_response <- filtered_data$information"
+"0",""
+"0","df_filtered_merge = filtered_data[c(""idstud"",""SQ02P09_raw_response"")]"

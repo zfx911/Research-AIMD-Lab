@@ -1,0 +1,547 @@
+---
+title: "S04"
+author: "zifengxu"
+date: "2023-12-12"
+output: html_document
+---
+
+# Read the Data (PSI)
+```{r}
+library(haven)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(jsonlite)
+```
+
+```{r}
+df <- read_sav("../data/grade9/BSLNORZ7_PSI.sav")
+
+# Explore the data
+head(df)
+```
+
+Remove the rows of auto check for this question
+```{r}
+df_filter = df%>%
+  filter(df$PSIVariableIdentifier != 5016 |is.na(df$PSIVariableIdentifier))
+```
+
+Fiter the rows and exactly one row above the row that satisfied one of the conditions below: 
+
+Condition 1: BlockName=SQ01, BookletPart=1, BlockInPart=2, currentindex=20.
+
+Condition 2: BlockName=SQ01, BookletPart=2, BlockInPart=1, currentindex=6.
+
+```{r}
+condition1 <- df_filter$BlockName == 'SQ01' & 
+              df_filter$BookletPart == 1 & 
+              df_filter$BlockInPart == 2 & 
+              df_filter$currentindex == 18
+
+# Define the second condition
+condition2 <- df_filter$BlockName == 'SQ01' & 
+              df_filter$BookletPart == 2 & 
+              df_filter$BlockInPart == 1 & 
+              df_filter$currentindex == 4 
+
+# Combine the two conditions using OR (|) as you want rows satisfying either condition
+combined_condition <- condition1 | condition2
+
+# Use filter to get the rows that satisfy the conditions and one row below
+result4 <- df_filter %>% 
+  filter(combined_condition | lag(combined_condition, default = FALSE))
+
+result4
+```
+
+
+### Module Path
+Create a new column module_path based on (BlockName, BookletPart, BlockInPart, currentindex)
+```{r}
+result_use_Q4= transform(result4,
+                       module_path = paste0("(", BlockName, ", ", BookletPart, ", ", BlockInPart, ")"))
+head(result_use_Q4)
+```
+
+```{r}
+unique(result_use_Q4$eventname)
+```
+
+
+### Time
+```{r}
+result_filter_Q4=result_use_Q4 %>%filter(eventname %in% c("Nav:GoTo", "Response", "UI:Scrollbar", "Btn:Calc"))
+result_filter_Q4
+```
+
+
+```{r}
+result_time_complete_Q4=result_filter_Q4 %>%
+  mutate(SQ01S04_time = ifelse(currentindex == 18 & eventname == 'Nav:GoTo' | currentindex == 4 & eventname == 'Nav:GoTo', 0, ifelse(timemilisec - lag(timemilisec) > 0,
+                                      (timeunixsec - lag(timeunixsec) + (timemilisec - lag(timemilisec))/1000),
+                                      (timeunixsec - lag(timeunixsec) - 1 + (timemilisec + 1000 - lag(timemilisec))/1000))))
+# head(result_time_complete_Q4[c("idstud","module_path","SQ01S04_time")])
+
+# result_time_complete_Q4
+```
+
+```{r}
+result_time_complete_Q4 = result_time_complete_Q4%>%
+  mutate(RowNumber = row_number())
+```
+
+```{r}
+result_time_complete_Q4$SQ01S04_unit_time <- result_time_complete_Q4$timeunixsec * 1000 + result_time_complete_Q4$timemilisec
+
+# show all the units
+result_time_complete_Q4$SQ01S04_unit_time <- format(result_time_complete_Q4$SQ01S04_unit_time, scientific = FALSE)
+```
+
+```{r}
+result_time_complete_Q4
+```
+
+
+### Fill in declicking 
+If the column PSIVariableIdentifier == 5014 and the column information is empty, then fill "declick" into the column information.
+```{r}
+result_declick_Q4 <- result_time_complete_Q4 %>%
+  mutate(information = ifelse(PSIVariableIdentifier == 5014 & information == "", "declick", information))
+
+result_declick_Q4
+```
+
+
+### Check how many times come back to the previous question.
+```{r}
+result_time_complete_Q4[c("currentindex","eventname","information")]
+```
+
+Create a new column SQ01S04_goback. Filter the data according to BookletPart=1, BlockInPart=2, currentindex=17, eventname="Nav:GoTo" or BookletPart=2, BlockInPart=1, currentindex=3, eventname="Nav:GoTo". Count how the occurance for each different value of the column idstud.
+
+```{r}
+# Filter the data based on the specified conditions
+filtered_data <- result_time_complete_Q4 %>%
+  filter(
+    (BookletPart == 1 & BlockInPart == 2 & currentindex == 17 & eventname == "Nav:GoTo") |
+    (BookletPart == 2 & BlockInPart == 1 & currentindex == 3 & eventname == "Nav:GoTo")
+  )
+
+# Count occurrences for each different value of the column idstud
+result <- filtered_data %>%
+  group_by(idstud) %>%
+  summarise(SQ01S04_goback = n())
+
+# Merge the result back to the original data frame
+result_goback_Q4 <- merge(result_time_complete_Q4, result, by = "idstud", all.x = TRUE)
+
+result_goback_Q4$SQ01S04_goback[is.na(result_goback_Q4$SQ01S04_goback)] <- 0
+```
+
+```{r}
+result_goback_Q4
+# result_goback_Q4[c("idstud","eventname","currentindex","PSIVariableIdentifier","information","SQ01S04_goback")]
+```
+
+
+### Check how many times come back to the previous questions, including all the previous questions 
+```{r}
+# Filter the data based on the specified conditions
+filtered_data <- result_time_complete_Q4 %>%
+  filter(
+    (BookletPart == 1 & BlockInPart == 2 & currentindex < 18 & currentindex>=15 & eventname == "Nav:GoTo") |
+    (BookletPart == 2 & BlockInPart == 1 & currentindex < 4 & currentindex>=1 & eventname == "Nav:GoTo")
+  )
+
+# Count occurrences for each different value of the column idstud
+result <- filtered_data %>%
+  group_by(idstud) %>%
+  summarise(SQ01S04_goback_all = n())
+
+# Merge the result back to the original data frame
+result_goback_all_Q4 <- merge(result_goback_Q4, result, by = "idstud", all.x = TRUE)
+
+result_goback_all_Q4$SQ01S04_goback_all[is.na(result_goback_all_Q4$SQ01S04_goback_all)] <- 0
+```
+
+```{r}
+result_goback_all_Q4
+# result_goback_all_Q4[c("idstud","eventname","currentindex","PSIVariableIdentifier","information","SQ01S04_goback","SQ01S04_goback_all")]
+```
+
+
+### rewrite(write) the answer?
+```{r}
+# df_use = result_time_complete_Q4%>%
+#   mutate(RowNumber = row_number())
+# df_use
+df_use = data.frame(result_time_complete_Q4)
+```
+
+Create a new column ans_change where all the values are 0 at first. Go through the rows, if the column eventname == "Nav:GoTo" and BlockInPart == 1 and currentindex == 4 or eventname == "Nav:GoTo" and BlockInPart == 2 and currentindex == 18, until the next time there exist rows satisfied this condition, if there exists rows that satisfied the column eventname == "Response" and PSIVariableIdentifier== 5014 and information is not NA, then the new column ans_change of the row satisfied this condition = 1, otherwise 0.
+```{r}
+library(dplyr)
+
+# Assuming df_use is your original data frame
+df_use <- df_use %>%
+  mutate(ans_change = 0)  # Create a new column initialized with 0
+
+# Iterate through the rows
+for (i in 1:(nrow(df_use) - 1)) {
+  if ((df_use$eventname[i] == "Nav:GoTo" && df_use$BlockInPart[i] == 1 && df_use$currentindex[i] == 4) ||
+      (df_use$eventname[i] == "Nav:GoTo" && df_use$BlockInPart[i] == 2 && df_use$currentindex[i] == 18)) {
+    
+    # Check for the specified condition in subsequent rows
+    j <- i + 1
+    while (j <= nrow(df_use) && !(df_use$eventname[j] == "Nav:GoTo" && (df_use$currentindex[j] == 4 || df_use$currentindex[j] == 18))) {
+      if (df_use$eventname[j] == "Response" && df_use$PSIVariableIdentifier[j] == 5014 && !is.na(df_use$information[j])) {
+        df_use$ans_change[i] <- 1
+        break
+      }
+      j <- j + 1
+    }
+  }
+}
+```
+
+```{r}
+df_use[c("eventname","currentindex","information","PSIVariableIdentifier","SQ01S04_time","ans_change","RowNumber")]
+```
+
+Filter the data based on the column eventname == "Nav:GoTo" and currentindex == 18 or eventname == "Nav:GoTo" and currentindex == 4.Then group by the student id, the new column SQ01S04_answer_rewrite should created based on the sequence of the value of the column information in the order of if the row number is higher, their sequence should be higher.
+```{r}
+df_filtered <- df_use %>%
+  filter((eventname == "Nav:GoTo" & currentindex == 18) |
+         (eventname == "Nav:GoTo" & currentindex == 4))%>%
+  group_by(idstud) %>%
+  mutate(SQ01S04_sequence_list = list(ans_change[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S04_answer_rewrite <- sapply(df_filtered$SQ01S04_sequence_list, function(x) paste0("(", toString(x), ")"))
+
+# df_filtered
+```
+
+```{r}
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S04_answer_rewrite")]
+```
+
+```{r}
+result_answer_rewrite_Q4 <- merge(result_goback_all_Q4, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+# result_answer_rewrite_Q4
+```
+
+Then fill in all the missing value of the column SQ01S04_answer_rewrite according to the student name.
+```{r}
+result_answer_rewrite_Q4=result_answer_rewrite_Q4%>%
+  group_by(idstud) %>%
+  fill(SQ01S04_answer_rewrite, .direction = "downup")
+result_answer_rewrite_Q4
+```
+
+
+### Answer in Sequence
+Filter the data by PSIVariableIdentifier == 5014. Then group by the student id, the new column SQ01S04_answer_sequence should created based on the sequence of the value of the column information in the order of if the row number is higher, their sequence should be higher.
+
+```{r}
+# Filter data and arrange by idstud and information
+df_filtered <- result_time_complete_Q4 %>%
+  filter(PSIVariableIdentifier == 5014)%>%
+  group_by(idstud) %>%
+  mutate(SQ01S04_sequence_list = list(information[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S04_answer_sequence <- sapply(df_filtered$SQ01S04_sequence_list, function(x) paste0("(", toString(x), ")"))
+
+# df_filtered
+```
+
+Create a new dataframe by merge the two dataframes by using the column idstud, PSIVariableIdentifier, and RowNumber. Since each student has unique student id and response id to answer different questions.
+```{r}
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S04_answer_sequence")]
+```
+
+```{r}
+# 7,209 rows
+result_ans_seq_Q4 <- merge(result_answer_rewrite_Q4, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+# result_ans_seq_Q4
+```
+
+Then fill in all the missing value of the column SQ01S02_answer_sequence according to the student name.
+```{r}
+result_ans_seq_Q4=result_ans_seq_Q4%>%
+  group_by(idstud) %>%
+  fill(SQ01S04_answer_sequence, .direction = "downup")
+result_ans_seq_Q4
+```
+
+
+### Final answer
+Filter the column by taking PSIVariableIdentifier == 5014 and IsFinalAnswer == 1. Then create a new column named SQ01S04_final_answer and this column is exactly the same with the column information.
+```{r}
+# Filter data and arrange by idstud 
+result_final_Q4=result_time_complete_Q4 %>%
+  filter(PSIVariableIdentifier == 5014 & IsFinalAnswer == 1)%>%
+  mutate(SQ01S04_final_answer = information)
+
+# merge the dataframe
+df_filtered_merge = result_final_Q4[c("idstud","RowNumber","SQ01S04_final_answer")]
+result_final_result_Q4 <- merge(result_ans_seq_Q4, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+# fill the missing value
+result_final_result_Q4=result_final_result_Q4%>%
+  group_by(idstud) %>%
+  fill(SQ01S04_final_answer, .direction = "downup")
+
+result_final_result_Q4
+```
+
+
+### Check the total time taken for each time
+
+```{r}
+df_test = data.frame(result_time_complete_Q4)
+# df_test
+```
+
+Go through all the row of the data by sequence of the row. Create a new column time_sum based on the column SQ01S04_time. If the SQ01S04_time is NA, then the new column time_sum = 0, otherwise the new column time_sum is calculated by keep adding the value of the column SQ01S04_time, until the value of the column SQ01S04_time is NA. Then the new_column time_sum = 0, and then add the value of the column SQ01S04_time again.
+
+```{r}
+# Create a new column time_sum
+df_test$time_sum <- 0
+
+# Iterate through the rows
+for (i in 2:nrow(df_test)) {
+  # If SQ01S04_time is NA, set time_sum to 0
+  if (df_test$SQ01S04_time[i] == 0) {
+    df_test$time_sum[i] <- 0
+  } else {
+    # Add the current SQ01S04_time to time_sum
+    df_test$time_sum[i] <- df_test$time_sum[i - 1] + df_test$SQ01S04_time[i]
+  }
+}
+
+# Print the result
+# print(df_test)
+```
+
+```{r}
+condition <- df_test$SQ01S04_time == 0
+df_test_filter = df_test%>% 
+  filter(lead(condition, default = FALSE))
+# df_test_filter
+```
+
+```{r}
+# Filter data and arrange by idstud and information
+df_filtered <- df_test_filter %>%
+  group_by(idstud) %>%
+  mutate(SQ01S04_sequence_list = list(time_sum[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S04_seq_time <- sapply(df_filtered$SQ01S04_sequence_list, function(x) paste0("(", toString(x), ")"))
+
+# filter the merge data
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S04_seq_time")]
+
+result_time_seq_Q4 <- merge(result_final_result_Q4, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_time_seq_Q4=result_time_seq_Q4%>%
+  group_by(idstud) %>%
+  fill(SQ01S04_seq_time, .direction = "downup")
+```
+
+```{r}
+result_time_seq_Q4
+```
+
+
+### All Steps
+Create a new dataframe by copy the original one.Create a new column step_str based on the other column.
+If PSIVariableIdentifier == 5014, then step_str == "select_option_" + value of the column information
+If eventname == "Nav:GoTo" & new_currentindex == 4, then step_str == "Begin_Q4"
+If eventname == "Nav:GoTo" & new_currentindex != 4, then step_str == "Nevigate_to_Q"+ value of the column new_currentindex
+If eventname == "UI:Scrollbar", step_str == extract the value after event and scrollTop in the column information.
+If eventname == "Btn:Calc", step_str == "Calculator" + extract the value after To in the column information.
+
+Create a column new_currentindex by changing the column currentindex based on the rule below:
+15 to 1, 16 to 2, 17 to 3, 18 to 4, 19 to 5, 20 to 6, 21 to 7, 22 to 8, 23 to 9, 24 to 10, 25 to 11, 26 to 12, 27 to 13, 28 to 14
+```{r}
+result_copy_Q4=data.frame(result_declick_Q4)
+result_copy_Q4 <- result_copy_Q4 %>%
+  mutate(new_currentindex = case_when(
+    currentindex == 14 & BookletPart == 1 ~ 0,
+    currentindex == 15 ~ 1,
+    currentindex == 16 ~ 2,
+    currentindex == 17 ~ 3,
+    currentindex == 18 ~ 4,
+    currentindex == 19 ~ 5,
+    currentindex == 20 ~ 6,
+    currentindex == 21 ~ 7,
+    currentindex == 22 ~ 8,
+    currentindex == 23 ~ 9,
+    currentindex == 24 ~ 10,
+    currentindex == 25 ~ 11,
+    currentindex == 26 ~ 12,
+    currentindex == 27 ~ 13,
+    currentindex == 28 ~ 14,
+    TRUE ~ currentindex  # Keep the original value if it doesn't match any rule
+  ))
+```
+
+```{r}
+result_str_Q4<- result_copy_Q4 %>%
+  mutate(
+    step_str = case_when(
+      PSIVariableIdentifier == 5014 ~ paste0("select_option_", information),
+      eventname == "Nav:GoTo" & new_currentindex == 4 ~ "Begin_Q4",
+      eventname == "Nav:GoTo" & new_currentindex != 4 ~ paste0("Navigate_to_Q", new_currentindex),
+      eventname == "UI:Scrollbar" ~ sub('.*"event":"([^"]+).*"scrollTop":(\\d+).*', '\\1 \\2', information),
+      eventname == "Btn:Calc" ~ paste0("Calculator_", gsub('.*To":"(\\w+).*', '\\1', information)),
+      TRUE ~ NA_character_  # If none of the conditions are met, set to NA
+    )
+  )
+result_str_Q4[c("RowNumber","step_str","information")]
+```
+ 
+If the row of value of the column eventname == "UI:Scrollbar", then the value of the row of the column step_str substitute the white space to _.
+```{r}
+result_str_use_Q4 <- result_str_Q4 %>%
+  mutate(step_str = ifelse(eventname == "UI:Scrollbar", gsub(" ", "_", step_str), step_str))
+result_str_use_Q4[c("RowNumber","step_str","information")]
+```
+
+```{r}
+# Filter data and create a list to record all the steps needed.
+df_filtered <- result_str_use_Q4 %>%
+  filter(!is.na(step_str)) %>%
+  group_by(idstud) %>%
+  mutate(SQ01S04_allsteps_list = list(step_str[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S04_allsteps_seq <- sapply(df_filtered$SQ01S04_allsteps_list, function(x) paste0("(", toString(x), ")"))
+```
+
+```{r}
+df_filtered <- select(df_filtered, -SQ01S04_allsteps_list)
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S04_allsteps_seq")]
+
+result_allsteps_Q4 <- merge(result_time_seq_Q4, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_allsteps_Q4=result_allsteps_Q4%>%
+  group_by(idstud) %>%
+  fill(SQ01S04_allsteps_seq, .direction = "downup")
+
+result_allsteps_Q4
+```
+
+```{r}
+result_allsteps_Q4[c("idstud","SQ01S04_allsteps_seq","information")]
+```
+
+
+### Timestamp for All Steps in milisecond
+create a column to record the time taken for each single steps for each student to do this problem.
+```{r}
+# Filter data and create a list to record all the steps needed.
+df_filtered <- result_str_use_Q4 %>%
+  group_by(idstud) %>%
+  mutate(SQ01S04_allsteps_list = list(SQ01S04_time[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S04_allsteps_seq_time <- sapply(df_filtered$SQ01S04_allsteps_list, function(x) paste0("(", toString(x), ")"))
+
+# filter the data and select column to merge
+df_filtered <- select(df_filtered, -SQ01S04_allsteps_list)
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S04_allsteps_seq_time")]
+
+# merge the data
+result_alls_time_Q4 <- merge(result_allsteps_Q4, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_alls_time_Q4=result_alls_time_Q4%>%
+  group_by(idstud) %>%
+  fill(SQ01S04_allsteps_seq_time, .direction = "downup")
+result_alls_time_Q4
+```
+
+
+### Unit Time for All Steps
+create a column to record the time taken for each single steps for each student to do this problem.
+```{r}
+# Filter data and create a list to record all the steps needed.
+df_filtered <- result_str_use_Q4 %>%
+  group_by(idstud) %>%
+  mutate(SQ01S04_allsteps_list = list(SQ01S04_unit_time[order(row_number())]))
+
+# Convert the list column to a new column with the desired format, and then drop the list column
+df_filtered$SQ01S04_allsteps_timestamp <- sapply(df_filtered$SQ01S04_allsteps_list, function(x) paste0("(", toString(x), ")"))
+
+# filter the data and select column to merge
+df_filtered <- select(df_filtered, -SQ01S04_allsteps_list)
+df_filtered_merge = df_filtered[c("idstud","RowNumber","SQ01S04_allsteps_timestamp")]
+
+# merge the data
+result_all_unit_time_Q4 <- merge(result_alls_time_Q4, df_filtered_merge, by = c("idstud","RowNumber"), all = TRUE)
+
+result_all_unit_time_Q4=result_all_unit_time_Q4%>%
+  group_by(idstud) %>%
+  fill(SQ01S04_allsteps_timestamp, .direction = "downup")
+result_all_unit_time_Q4
+```
+
+### Total time taken
+Create a new column SQ01S04_total_time. Group by idstud, SQ01S04_total_time = sum the value of the column SQ01S04_time for each idstud.
+
+```{r}
+# Group by idstud and calculate the sum of SQ01S04_time
+result <- result_time_complete_Q4 %>%
+  group_by(idstud) %>%
+  summarise(SQ01S04_total_time = sum(SQ01S04_time, na.rm = TRUE))
+
+# Merge the result back to the original data frame
+result_total_time_Q4 <- merge(result_all_unit_time_Q4, result, by = "idstud", all.x = TRUE)
+```
+
+```{r}
+result_total_time_Q4
+# result_total_time_Q4[c("idstud","SQ01S04_time","SQ01S04_total_time")]
+```
+
+
+### Save the data
+Filter the columns of data frame, only keep the new created columns and idstud, idstud_ori, ImportLogID, BlockName, BookletPart, BlockInPart.
+```{r}
+resultS04 <- result_total_time_Q4 %>%
+  select(idstud, idstud_ori, ImportLogID, BlockName, BookletPart,BlockInPart, module_path, SQ01S04_goback, SQ01S04_goback_all, SQ01S04_answer_rewrite, SQ01S04_answer_sequence, SQ01S04_final_answer, SQ01S04_seq_time, SQ01S04_allsteps_seq, SQ01S04_allsteps_seq_time, SQ01S04_allsteps_timestamp, SQ01S04_total_time)
+# resultS04
+```
+
+
+```{r}
+resultS04_save = resultS04[!duplicated(resultS04), ]
+
+condition1 <- resultS04_save$BlockName == 'SQ01' & 
+              resultS04_save$BookletPart == 1 & 
+              resultS04_save$BlockInPart == 2 
+
+condition2 <- resultS04_save$BlockName == 'SQ01' & 
+              resultS04_save$BookletPart == 2 & 
+              resultS04_save$BlockInPart == 1
+
+combined_condition <- condition1 | condition2
+
+resultS04_save=resultS04_save%>%ungroup()%>% 
+  filter(combined_condition)
+resultS04_save
+```
+
+Save the dataframe
+```{r}
+# write_sav(resultS04_save, "../new_data/grade9/SQ12S04_PSI.sav")
+
+# write.csv(resultS04_save, file = 'csv_SQ12S04_PSI.csv', row.names = FALSE)
+```
+
+
+

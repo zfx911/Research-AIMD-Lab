@@ -1,0 +1,7 @@
+"0","result_time_complete_Q7=result_filter_Q7 %>%"
+"0","  mutate(SQ01F07_time = ifelse(currentindex == 22 & eventname == 'Nav:GoTo' | currentindex == 10 & eventname == 'Nav:GoTo', 0, ifelse(timemilisec - lag(timemilisec) > 0,"
+"0","                                      (timeunixsec - lag(timeunixsec) + (timemilisec - lag(timemilisec))/1000),"
+"0","                                      (timeunixsec - lag(timeunixsec) - 1 + (timemilisec + 1000 - lag(timemilisec))/1000))))"
+"0",""
+"0","# head(result_time_complete_Q7[c(""idstud"",""module_path"",""SQ01F07_time"")])"
+"0","# result_time_complete_Q7"
